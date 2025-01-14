@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <images>
+        <OIP class="JPG"></OIP>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelompok - Perangkat Keras</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1e90ff;
+            color: white;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        header p {
+            margin: 5px 0;
+            font-size: 1rem;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #add8e6;
+            padding: 10px;
+        }
+
+        nav a {
+            margin: 0 10px;
+            padding: 10px 15px;
+            background-color: #87ceeb;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #4682b4;
+        }
+
+        section {
+            display: none;
+            padding: 20px;
+            text-align: center;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #1e90ff;
+            color: white;
+            margin-top: 20px;
+        }
+
+        ul {
+            text-align: left;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        img {
+            max-width: 100px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Perangkat Keras</h1>
+        <p>Kelompok Tugas Minggu ke-12 / 13</p>
+    </header>
+
+    <nav>
+        <a href="#home" onclick="showSection('home')">Beranda</a>
+        <a href="#input" onclick="showSection('input')">Peralatan Input</a>
+        <a href="#processing" onclick="showSection('processing')">Peralatan Pemrosesan</a>
+        <a href="#output" onclick="showSection('output')">Peralatan Output</a>
+    </nav>
+
+    <section id="home" class="active">
+        <h2>Selamat Datang</h2>
+        <p>Nama Anggota Kelompok :</p>
+        <p>1. Aditya Julian</p>
+        <p>2. Gilang Permana Putra</p>
+        <p>3. Rizki Indera Jati</p>
+    </section>
+
+    <section id="input">
+        <h2>Peralatan Input</h2>
+        <p>Peralatan input digunakan untuk memasukkan data ke dalam komputer. Berikut penjelasan masing-masing perangkat:</p>
+        <ul>
+            <li><b>Mouse :</b> Alat yang digunakan untuk menggerakkan kursor pada layar komputer. Mouse juga digunakan untuk memilih, menyeret, dan mengklik elemen pada layar.
+                <br><img src="images/OIP.jpg" alt="Mouse" height="100"></li>
+            <li><b>Keyboard :</b> Perangkat untuk mengetik data berupa huruf, angka, atau simbol ke dalam sistem komputer.
+                <br><img src="images/KEY.jpg" alt="Keyboard" height="100"></li>
+            <li><b>Scanner :</b> Digunakan untuk memindai dokumen atau gambar dan mengubahnya menjadi format digital yang dapat dibaca komputer.
+                <br><img src="images/scanner.jpg" alt="Scanner" height="100"></li>
+        </ul>
+    </section>
+
+    <section id="processing">
+        <h2>Peralatan Pemrosesan</h2>
+        <p>Peralatan pemrosesan bertanggung jawab untuk mengolah data yang diterima dari perangkat input. Berikut detailnya:</p>
+        <ul>
+            <li><b>CPU :</b> Central Processing Unit adalah otak komputer yang mengolah instruksi dan data yang diberikan oleh perangkat input.
+                <br><img src="images/cpu.jpg" alt="CPU" height="100"></li>
+            <li><b>Motherboard :</b> Papan utama yang menghubungkan semua komponen komputer, termasuk CPU, RAM, dan perangkat keras lainnya.
+                <br><img src="images/motherboard.jpg" alt="Motherboard" height="100"></li>
+            <li><b>RAM :</b> Random Access Memory menyimpan data sementara saat komputer sedang bekerja. Semakin besar kapasitas RAM, semakin cepat komputer dapat memproses data.
+                <br><img src="images/ram.webp" alt="RAM" height = 100 "></li>
+        </ul>
+    </section>
+
+    <section id="output">
+        <h2>Peralatan Output</h2>
+        <p>Peralatan output digunakan untuk menampilkan hasil dari data yang telah diproses oleh komputer. Berikut penjelasannya:</p>
+        <ul>
+            <li><b>Monitor :</b> Layar yang digunakan untuk menampilkan teks, gambar, atau video hasil pemrosesan komputer.
+                <br><img src="images/monitor.jpg" alt="CPU" height="100"></li>
+            <li><b>Printer :</b> Perangkat yang mencetak dokumen atau gambar ke atas kertas.
+                <br><img src="images/printer.jpg" alt="Motherboard" height="100"></li>
+            <li><b>Speaker :</b> Speaker atau pengeras suara adalah salah satu komponen penting dalam sistem audio. Speaker berfungsi untuk mengubah sinyal listrik menjadi gelombang suara yang dapat didengar oleh manusia.
+                <br><img src="images/speaker.jpg" alt="Speaker" height = "100"></li>
+        </ul>
+    </section>
+
+    <footer>
+        <p>© 2025 Kelompok Web Perangkat Keras. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function showSection(sectionId) {
+            // Sembunyikan semua section
+            document.querySelectorAll('section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Tampilkan section yang dipilih
+            document.getElementById(sectionId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
