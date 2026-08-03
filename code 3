@@ -1,0 +1,148 @@
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ThingSpeak.h>
+#include <LittleFS.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h> // Library untuk LCD 16x2 I2C
+
+// ================= KONFIGURASI =================
+const char* ssid = "NAMA_WIFI_ANDA";              // Ganti dengan nama WiFi Anda
+const char* password = "PASSWORD_WIFI_ANDA";      // Ganti dengan password WiFi Anda
+
+unsigned long myChannelNumber = 1234567;          // Ganti dengan Channel ID ThingSpeak Anda
+const char* myWriteAPIKey = "WRITE_API_KEY_ANDA"; // Ganti dengan Write API Key ThingSpeak Anda
+// ===============================================
+
+// Konfigurasi Pin Sensor & Aktuator sesuai Wemos D1 R32
+const int pinSoil = A0;  // Pin Analog A0 (GPIO 2) untuk Sensor Kelembaban Tanah
+const int pinPompa = 26; // Pin D2 (GPIO 26) untuk Aktuator 1 (Pompa) [cite: 1.1.1]
+const int pinKipas = 27; // Pin D6 (GPIO 27) untuk Aktuator 2 (Kipas) [cite: 1.1.1]
+
+// Inisialisasi LCD 16x2 I2C (Alamat I2C umumnya 0x27 atau 0x3F)
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
+
+WiFiClient client;
+WebServer server(80);
+
+unsigned long lastTime = 0;
+unsigned long timerDelay = 15000; // Kirim data tiap 15 detik (sesuai limit ThingSpeak)
+
+void setup() {
+  Serial.begin(115200);
+
+  // 1. Inisialisasi LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Sistem Dimulai..");
+  
+  // 2. Setup Pin Aktuator
+  pinMode(pinPompa, OUTPUT);
+  pinMode(pinKipas, OUTPUT);
+  digitalWrite(pinPompa, LOW); // Posisi awal mati
+  digitalWrite(pinKipas, LOW); // Posisi awal mati
+
+  // 3. Mount LittleFS (Membaca memori internal Wemos D1 R32)
+  if (!LittleFS.begin(true)) {
+    Serial.println("Gagal Mount LittleFS!");
+    lcd.setCursor(0, 1);
+    lcd.print("LittleFS Error!");
+    return;
+  }
+  Serial.println("LittleFS Berhasil Di-mount.");
+
+  // 4. Hubungkan ke WiFi
+  WiFi.begin(ssid, password);
+  Serial.print("Menghubungkan ke WiFi");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Koneksi WiFi...");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("\nTerhubung! Buka IP ini di Browser:");
+  Serial.println(WiFi.localIP());
+
+  // Tampilkan IP di LCD sejenak
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Terhubung!");
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP().toString());
+  delay(3000); 
+  lcd.clear();
+
+  // 5. Mulai koneksi ke ThingSpeak
+  ThingSpeak.begin(client);
+
+  // 6. Setup Routing WebServer untuk LittleFS
+  server.serveStatic("/", LittleFS, "/");
+
+  // Endpoint untuk menerima perintah kendali Aktuator dari website
+  server.on("/actuator", HTTP_GET, []() {
+    if (server.hasArg("id") && server.hasArg("state")) {
+      String id = server.arg("id");
+      String state = server.arg("state");
+      
+      int pin = (id == "1") ? pinPompa : pinKipas;
+      int val = (state == "1") ? HIGH : LOW;
+      
+      digitalWrite(pin, val);
+      
+      server.send(200, "text/plain", "OK");
+      Serial.println("Perintah Aktuator diterima: " + id + " -> " + state);
+    } else {
+      server.send(400, "text/plain", "Bad Request: Parameter kurang lengkap");
+    }
+  });
+
+  server.begin();
+  Serial.println("Web Server Berjalan!");
+}
+
+void loop() {
+  // Selalu dengarkan request dari browser
+  server.handleClient(); 
+
+  // Timer untuk membaca sensor dan mengirim data setiap 15 detik
+  if ((millis() - lastTime) > timerDelay) {
+    
+    // 1. Baca data dari Sensor Kelembaban Tanah via pin A0
+    int nilaiAnalogTanah = analogRead(pinSoil);
+    
+    // Konversi nilai analog ESP32 (0 - 4095) ke persentase (0 - 100%)
+    // Silakan ubah angka 4095 atau 0 jika sensor Anda terbalik (Kering vs Basah)
+    float kelTanah = map(nilaiAnalogTanah, 4095, 0, 0, 100); 
+
+    // Batasi nilai persentase agar berada di rentang 0 - 100%
+    if(kelTanah < 0) kelTanah = 0;
+    if(kelTanah > 100) kelTanah = 100;
+
+    // Tampilkan hasil di Serial Monitor
+    Serial.printf("Nilai Analog: %d | Kelembaban Tanah: %.2f %%\n", nilaiAnalogTanah, kelTanah);
+
+    // Tampilkan ke LCD
+    lcd.setCursor(0, 0);
+    lcd.print("Moisture Tanah:");
+    lcd.setCursor(0, 1);
+    lcd.print(kelTanah, 1); // 1 angka di belakang koma
+    lcd.print(" %    ");    // Spasi untuk menimpa sisa karakter lama
+
+    // 2. Set Data untuk dikirim ke field ThingSpeak (Field 1)
+    ThingSpeak.setField(1, kelTanah);
+
+    // 3. Proses kirim Data
+    int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+    if (x == 200) {
+      Serial.println("Data sukses dikirim ke ThingSpeak.");
+    } else {
+      Serial.println("Gagal mengirim ke ThingSpeak. Kode HTTP: " + String(x));
+    }
+    
+    // Reset timer
+    lastTime = millis();
+  }
+}
