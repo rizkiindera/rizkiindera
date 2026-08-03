@@ -115,3 +115,109 @@
     </script>
 </body>
 </html>
+
+
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Kelembaban Tanah</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 350px;
+            width: 100%;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .value {
+            font-size: 65px;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 20px 0;
+        }
+        .status {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Kelembaban Tanah</h2>
+        <!-- Tempat angka % akan ditampilkan -->
+        <div class="value" id="nilai-soil">-- %</div>
+        <!-- Tempat status update waktu akan ditampilkan -->
+        <div class="status" id="status-update">Menunggu data...</div>
+    </div>
+
+    <!-- Memanggil file JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+// === GANTI DENGAN CHANNEL ID THINGSPEAK ANDA ===
+const channelID = "1234567"; 
+// ===============================================
+
+function ambilDataTanah() {
+    const statusElement = document.getElementById("status-update");
+    
+    // URL untuk mengambil 1 data terakhir dari Field 1 ThingSpeak
+    const url = `https://api.thingspeak.com/channels/${channelID}/fields/1/last.json`;
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Gagal mengambil data");
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Jika ada data yang masuk dari ThingSpeak
+            if (data && data.field1 != null) {
+                // Ambil nilai dan bulatkan jadi 1 angka di belakang koma
+                let kelembaban = parseFloat(data.field1).toFixed(1);
+                
+                // Masukkan nilai ke HTML dan tambahkan simbol %
+                document.getElementById("nilai-soil").innerText = kelembaban + " %";
+                
+                // Update teks jam terakhir data masuk
+                let waktu = new Date().toLocaleTimeString('id-ID');
+                statusElement.innerText = "Update terakhir: " + waktu;
+            } else {
+                statusElement.innerText = "Data ThingSpeak kosong.";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            document.getElementById("nilai-soil").innerText = "Error";
+            statusElement.innerText = "Gagal terhubung ke ThingSpeak.";
+        });
+}
+
+// 1. Ambil data pertama kali saat website baru dibuka
+ambilDataTanah();
+
+// 2. Ambil data terus menerus secara otomatis setiap 15 detik (15000 ms)
+setInterval(ambilDataTanah, 15000);
+
