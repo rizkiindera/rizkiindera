@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farming Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+            margin: 0;
+            padding: 30px 20px;
+            color: #2c3e50;
+            min-height: 100vh;
+        }
+        .dashboard-wrapper {
+            max-width: 1200px; /* Lebar maksimal dashboard */
+            margin: 0 auto;
+        }
+        
+        /* --- TOP BAR (WAKTU & SAKLAR) --- */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .time-display {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: 1px;
+        }
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        /* Style Saklar (Toggle) */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e74c3c; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #27ae60; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* --- KOTAK GRID LAYOUT --- */
+        .container {
+            display: grid;
+            /* Membagi otomatis menjadi kolom-kolom sejajar */
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        
+        /* Desain Kotak Kaca */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 25px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* --- KOTAK 1: STATUS TANAH --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h2 { margin: 0; font-size: 18px; font-weight: 700; color: #2c3e50;}
+        .btn-refresh {
+            background: white; border: none; border-radius: 50%; width: 40px; height: 40px;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #2c3e50; transition: 0.3s;
+        }
+        .btn-refresh:hover:not(:disabled) { transform: scale(1.1); color: #27ae60; }
+        .spin { animation: putar 1s linear infinite; }
+        @keyframes putar { 100% { transform: rotate(360deg); } }
+        
+        .status-badge {
+            display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: 600;
+            color: white; background-color: #bdc3c7; transition: 0.5s; align-self: center;
+        }
+        .value-container { margin: 20px 0; }
+        .value { font-size: 65px; font-weight: 700; color: #bdc3c7; transition: 0.5s; }
+        .percent { font-size: 24px; font-weight: 600; color: #7f8c8d; }
+        .progress-bg { background: rgba(255, 255, 255, 0.6); border-radius: 10px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar { height: 100%; width: 0%; background-color: #bdc3c7; border-radius: 10px; transition: width 1s; }
+
+        /* --- KOTAK 2: GRAFIK --- */
+        .chart-container { position: relative; height: 200px; width: 100%; margin-top: 15px; }
+
+        /* --- KOTAK 3: POMPA --- */
+        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .btn {
+            padding: 15px 0; font-size: 16px; font-weight: 600; border: none; border-radius: 12px;
+            cursor: pointer; color: white; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-on { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .btn-on:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn-off { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .btn-off:hover:not(:disabled) { transform: translateY(-2px); }
+        
+        .footer-text { font-size: 12px; color: #555; margin-top: 15px; font-weight: 500;}
+
+        /* Efek saat web dimatikan */
+        .disabled-layer { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        
+        <!-- TOP BAR: WAKTU & MASTER SWITCH -->
+        <div class="top-bar">
+            <div class="time-display" id="jam-sekarang">--:--:--</div>
+            <div class="switch-container">
+                <span id="teks-status-web">Web AKTIF</span>
+                <label class="switch">
+                    <input type="checkbox" id="web-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="container" id="main-container">
+            
+            <!-- KOTAK 1: Indikator Kelembaban Tanah -->
+            <div class="glass-card">
+                <div class="header">
+                    <h2>Status Tanah 🌱</h2>
+                    <button id="btn-refresh" class="btn-refresh" title="Perbarui Data">
+                        <svg id="icon-refresh" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="status-badge" id="status-badge">Menunggu...</div>
+                <div class="value-container">
+                    <span class="value" id="nilai-soil">--</span><span class="percent">%</span>
+                </div>
+                <div class="progress-bg"><div class="progress-bar" id="progress-bar"></div></div>
+                <div class="footer-text" id="status-update">Sistem siap...</div>
+            </div>
+
+            <!-- KOTAK 2: Grafik Riwayat -->
+            <div class="glass-card">
+                <h2>Riwayat Kelembaban</h2>
+                <div class="chart-container">
+                    <canvas id="soilChart"></canvas>
+                </div>
+            </div>
+
+            <!-- KOTAK 3: Kontrol Pompa Air -->
+            <div class="glass-card">
+                <h2>Kendali Pompa 💧</h2>
+                <div class="btn-group">
+                    <button id="btn-pompa-on" class="btn btn-on" onclick="kontrolPompa(1, 1)">HIDUPKAN POMPA</button>
+                    <button id="btn-pompa-off" class="btn btn-off" onclick="kontrolPompa(1, 0)">MATIKAN POMPA</button>
+                </div>
+                <div class="footer-text" id="status-pompa">Sistem Pompa Siap.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+// === KONFIGURASI THINGSPEAK ===
+const channelID = "1234567"; // GANTI DENGAN CHANNEL ID ANDA
+const readAPIKey = "";       
+// ===============================
+
+let isFetching = false;
+let soilChart; 
+let autoRefreshTimer; // Variabel penyimpan timer otomatis
+let webAktif = true;  // Status utama web
+
+// --- FUNGSI JAM REAL-TIME ---
+function updateJam() {
+    const elemenJam = document.getElementById('jam-sekarang');
+    const sekarang = new Date();
+    elemenJam.innerText = sekarang.toLocaleTimeString('id-ID');
+}
+// Update jam setiap 1 detik
+setInterval(updateJam, 1000);
+updateJam();
+
+// --- INISIALISASI GRAFIK ---
+function inisialisasiGrafik() {
+    const ctx = document.getElementById('soilChart').getContext('2d');
+    soilChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], 
+            datasets: [{
+                label: 'Kelembaban (%)',
+                data: [], 
+                borderColor: '#27ae60',
+                backgroundColor: 'rgba(39, 174, 96, 0.2)',
+                borderWidth: 3,
+                tension: 0.4, 
+                fill: true,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, max: 100 }, x: { ticks: { maxTicksLimit: 5 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// --- FUNGSI AMBIL DATA ---
+function ambilDataTanah() {
+    if (!webAktif || isFetching) return; 
+    isFetching = true;
+    
+    const iconRefresh = document.getElementById("icon-refresh");
+    const statusUpdate = document.getElementById("status-update");
+    
+    iconRefresh.classList.add("spin");
+    statusUpdate.innerText = "Mengambil data...";
+
+    let url = `https://api.thingspeak.com/channels/${channelID}/fields/1.json?results=10`;
+    if (readAPIKey !== "") url += `&api_key=${readAPIKey}`;
+
+    fetch(url)
+        .then(res => {
+            if (!res.ok) throw new Error("Gagal mengambil data");
+            return res.json();
+        })
+        .then(data => {
+            const feeds = data.feeds;
+            if (feeds && feeds.length > 0) {
+                let dataTerakhir = feeds[feeds.length - 1]; 
+                let kelembaban = parseFloat(dataTerakhir.field1);
+                
+                document.getElementById("nilai-soil").innerText = kelembaban.toFixed(1);
+                document.getElementById("progress-bar").style.width = kelembaban + "%";
+                
+                let warna = "", teksStatus = "";
+                if (kelembaban < 30) { warna = "#e74c3c"; teksStatus = "Kering 🏜️"; } 
+                else if (kelembaban <= 70) { warna = "#27ae60"; teksStatus = "Ideal 🌱"; } 
+                else { warna = "#2980b9"; teksStatus = "Basah 💧"; }
+
+                document.getElementById("nilai-soil").style.color = warna;
+                document.getElementById("progress-bar").style.backgroundColor = warna;
+                const statusBadge = document.getElementById("status-badge");
+                statusBadge.style.backgroundColor = warna;
+                statusBadge.innerText = teksStatus;
+
+                let labelWaktu = [];
+                let nilaiGrafik = [];
+                
+                feeds.forEach(feed => {
+                    if(feed.field1 != null) {
+                        let waktuLokal = new Date(feed.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                        labelWaktu.push(waktuLokal);
+                        nilaiGrafik.push(parseFloat(feed.field1));
+                    }
+                });
+
+                soilChart.data.labels = labelWaktu;
+                soilChart.data.datasets[0].data = nilaiGrafik;
+                soilChart.update();
+
+                statusUpdate.innerText = "Update terakhir: " + new Date().toLocaleTimeString('id-ID');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            statusUpdate.innerText = "Gagal mengambil data.";
+        })
+        .finally(() => {
+            setTimeout(() => { iconRefresh.classList.remove("spin"); isFetching = false; }, 500);
+        });
+}
+
+// --- FUNGSI KONTROL POMPA ---
+function kontrolPompa(id, state) {
+    if (!webAktif) return; // Cegah tombol jika web mati
+    
+    const statusPompa = document.getElementById("status-pompa");
+    statusPompa.innerText = "Mengirim perintah...";
+
+    fetch(`/actuator?id=${id}&state=${state}`)
+        .then(response => {
+            if (response.ok) {
+                statusPompa.innerText = `Pompa berhasil di${state === 1 ? 'hidupkan' : 'matikan'}.`;
+            } else {
+                alert("Gagal mengirim perintah! Cek koneksi Wemos.");
+                statusPompa.innerText = "Gagal mengirim perintah.";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Pastikan HP/Laptop terhubung ke jaringan Wemos.");
+            statusPompa.innerText = "Koneksi terputus.";
+        });
+}
+
+// --- LOGIKA SAKLAR ON/OFF WEB ---
+document.getElementById('web-toggle').addEventListener('change', function() {
+    webAktif = this.checked;
+    const teksStatus = document.getElementById('teks-status-web');
+    const container = document.getElementById('main-container');
+    const btnRefresh = document.getElementById('btn-refresh');
+    const btnOn = document.getElementById('btn-pompa-on');
+    const btnOff = document.getElementById('btn-pompa-off');
+
+    if (webAktif) {
+        teksStatus.innerText = "Web AKTIF";
+        teksStatus.style.color = "#2c3e50";
+        container.classList.remove('disabled-layer'); // Hilangkan efek redup
+        btnRefresh.disabled = false;
+        btnOn.disabled = false;
+        btnOff.disabled = false;
+        
+        // Nyalakan ulang timer otomatis
+        ambilDataTanah(); 
+        autoRefreshTimer = setInterval(ambilDataTanah, 15000);
+    } else {
+        teksStatus.innerText = "Web NONAKTIF";
+        teksStatus.style.color = "#e74c3c";
+        container.classList.add('disabled-layer'); // Tambahkan efek redup abu-abu
+        btnRefresh.disabled = true;
+        btnOn.disabled = true;
+        btnOff.disabled = true;
+        
+        // Matikan timer update ThingSpeak
+        clearInterval(autoRefreshTimer);
+    }
+});
+
+// --- JALANKAN PERTAMA KALI ---
+inisialisasiGrafik();
+ambilDataTanah();
+document.getElementById("btn-refresh").addEventListener("click", ambilDataTanah);
+
+// Set timer otomatis tiap 15 detik
+autoRefreshTimer = setInterval(ambilDataTanah, 15000);
