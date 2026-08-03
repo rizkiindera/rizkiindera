@@ -221,3 +221,118 @@ ambilDataTanah();
 // 2. Ambil data terus menerus secara otomatis setiap 15 detik (15000 ms)
 setInterval(ambilDataTanah, 15000);
 
+
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farming Dashboard</title>
+    <!-- Menggunakan font Poppins dari Google Fonts agar lebih modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 22px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+        .value-container {
+            margin: 20px 0;
+        }
+        .value {
+            font-size: 70px;
+            font-weight: 700;
+            line-height: 1;
+            color: #bdc3c7; /* Warna default sebelum data masuk */
+            transition: color 0.5s ease;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            background-color: #bdc3c7;
+            margin-bottom: 20px;
+            transition: background-color 0.5s ease;
+        }
+        /* Style untuk Progress Bar */
+        .progress-bg {
+            background: #ecf0f1;
+            border-radius: 10px;
+            height: 16px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%; /* Diatur oleh JS */
+            background-color: #bdc3c7;
+            border-radius: 10px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+        }
+        .footer-text {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Kelembaban Tanah</h2>
+        <div class="subtitle">Monitoring Tanaman Pintar</div>
+
+        <div class="status-badge" id="status-badge">Menunggu Data...</div>
+
+        <div class="value-container">
+            <span class="value" id="nilai-soil">--</span>
+            <span style="font-size: 24px; font-weight: 600; color: #7f8c8d;">%</span>
+        </div>
+
+        <div class="progress-bg">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="footer-text" id="status-update">Sedang menyambungkan ke satelit...</div>
+    </div>
+
+    <!-- Memanggil file JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
