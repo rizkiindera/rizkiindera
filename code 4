@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Smart Farming</title>
+    <style>
+        /* Desain tampilan website */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 260px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            transition: 0.3s;
+        }
+        .btn-on {
+            background-color: #27ae60;
+        }
+        .btn-on:hover {
+            background-color: #219150;
+        }
+        .btn-off {
+            background-color: #e74c3c;
+        }
+        .btn-off:hover {
+            background-color: #c0392b;
+        }
+        .info-text {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard Tanaman</h1>
+
+        <!-- Bagian 1: Monitoring Kelembaban Tanah -->
+        <div class="card">
+            <h2>Kelembaban Tanah (Live)</h2>
+            <p class="info-text">Data dikirim ke Field 1 ThingSpeak setiap 15 detik</p>
+            
+            <!-- PENTING: Ganti angka 1234567 di bawah ini dengan Channel ID ThingSpeak Anda -->
+            <iframe src="https://thingspeak.com/channels/1234567/charts/1?bgcolor=%23ffffff&color=%2327ae60&dynamic=true&results=30&type=line&update=15"></iframe>
+        </div>
+
+        <!-- Bagian 2: Kontrol Pompa Air (Aktuator 1) -->
+        <div class="card">
+            <h2>Kendali Pompa Air</h2>
+            <button class="btn btn-on" onclick="kontrolAktuator(1, 1)">Hidupkan Pompa</button>
+            <button class="btn btn-off" onclick="kontrolAktuator(1, 0)">Matikan Pompa</button>
+        </div>
+
+        <!-- Bagian 3: Kontrol Kipas (Aktuator 2) -->
+        <div class="card">
+            <h2>Kendali Kipas</h2>
+            <button class="btn btn-on" onclick="kontrolAktuator(2, 1)">Hidupkan Kipas</button>
+            <button class="btn btn-off" onclick="kontrolAktuator(2, 0)">Matikan Kipas</button>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi JavaScript untuk mengirim perintah ke Wemos
+        function kontrolAktuator(id, state) {
+            // Memanggil endpoint /actuator?id=...&state=... di kodingan C++
+            fetch(`/actuator?id=${id}&state=${state}`)
+                .then(response => {
+                    if (response.ok) {
+                        let namaAlat = (id === 1) ? "Pompa" : "Kipas";
+                        let statusAlat = (state === 1) ? "MENYALA" : "MATI";
+                        alert(namaAlat + " berhasil di-" + statusAlat + "!");
+                    } else {
+                        alert("Gagal mengirim perintah! Cek koneksi Wemos.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Terjadi kesalahan. Pastikan Anda terhubung ke jaringan Wemos.");
+                });
+        }
+    </script>
+</body>
+</html>
