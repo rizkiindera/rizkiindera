@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farming Dashboard</title>
+    <!-- Font Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* Latar belakang gradient hijau alam yang estetik */
+            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #2c3e50;
+        }
+        /* Desain Glassmorphism (Efek Kaca) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 40px 30px;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        /* Desain Tombol Refresh */
+        .btn-refresh {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+        .btn-refresh:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            color: #27ae60;
+        }
+        .btn-refresh:active {
+            transform: scale(0.95);
+        }
+        /* Animasi putar untuk ikon refresh */
+        .spin {
+            animation: putar 1s linear infinite;
+        }
+        @keyframes putar {
+            100% { transform: rotate(360deg); }
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            background-color: #bdc3c7;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: background-color 0.5s ease;
+        }
+        .value-container {
+            margin: 30px 0;
+        }
+        .value {
+            font-size: 75px;
+            font-weight: 700;
+            line-height: 1;
+            color: #bdc3c7;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            transition: color 0.5s ease;
+        }
+        .percent {
+            font-size: 28px;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+        /* Style Progress Bar */
+        .progress-bg {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            height: 18px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #bdc3c7;
+            border-radius: 15px;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+        }
+        .footer-text {
+            font-size: 13px;
+            color: #555;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-card">
+        <div class="header">
+            <h2>Tanah 🌱</h2>
+            <!-- Tombol Refresh dengan SVG Icon -->
+            <button id="btn-refresh" class="btn-refresh" title="Perbarui Data">
+                <svg id="icon-refresh" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="status-badge" id="status-badge">Menunggu Data...</div>
+
+        <div class="value-container">
+            <span class="value" id="nilai-soil">--</span>
+            <span class="percent">%</span>
+        </div>
+
+        <div class="progress-bg">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="footer-text" id="status-update">Menyambungkan ke sensor...</div>
+    </div>
+
+    <!-- Memanggil file JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+// === KONFIGURASI THINGSPEAK ===
+const channelID = "1234567"; // GANTI DENGAN CHANNEL ID ANDA
+const readAPIKey = "";       // ISI JIKA CHANNEL PRIVATE, KOSONGKAN JIKA PUBLIC
+// ===============================
+
+let isFetching = false; // Mencegah spam klik tombol refresh
+
+function ambilDataTanah() {
+    // Jika sedang mengambil data, jangan lakukan apa-apa
+    if (isFetching) return; 
+    
+    isFetching = true;
+    
+    // Ambil elemen HTML
+    const statusUpdate = document.getElementById("status-update");
+    const nilaiSoil = document.getElementById("nilai-soil");
+    const progressBar = document.getElementById("progress-bar");
+    const statusBadge = document.getElementById("status-badge");
+    const iconRefresh = document.getElementById("icon-refresh");
+    
+    // Mulai animasi putar ikon & ubah teks status
+    iconRefresh.classList.add("spin");
+    statusUpdate.innerText = "Memperbarui data...";
+
+    // Susun URL ThingSpeak
+    let url = `https://api.thingspeak.com/channels/${channelID}/fields/1/last.json`;
+    if (readAPIKey !== "") {
+        url += `?api_key=${readAPIKey}`;
+    }
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error("Gagal mengambil data");
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.field1 != null) {
+                let kelembaban = parseFloat(data.field1);
+                
+                // 1. Update Angka Text
+                nilaiSoil.innerText = kelembaban.toFixed(1);
+                
+                // 2. Update Lebar Progress Bar
+                progressBar.style.width = kelembaban + "%";
+                
+                // 3. Logika Warna & Status
+                let warna = "";
+                let teksStatus = "";
+
+                if (kelembaban < 30) {
+                    warna = "#e74c3c"; // Merah
+                    teksStatus = "Kering 🏜️";
+                } else if (kelembaban >= 30 && kelembaban <= 70) {
+                    warna = "#27ae60"; // Hijau
+                    teksStatus = "Ideal 🌱";
+                } else {
+                    warna = "#2980b9"; // Biru
+                    teksStatus = "Sangat Basah 💧";
+                }
+
+                // Terapkan warna
+                nilaiSoil.style.color = warna;
+                progressBar.style.backgroundColor = warna;
+                statusBadge.style.backgroundColor = warna;
+                statusBadge.innerText = teksStatus;
+                
+                // Update teks jam terakhir
+                let waktu = new Date().toLocaleTimeString('id-ID');
+                statusUpdate.innerText = "Berhasil diperbarui pukul " + waktu;
+            } else {
+                statusUpdate.innerText = "Data di ThingSpeak kosong.";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            nilaiSoil.innerText = "Err";
+            statusBadge.innerText = "Koneksi Terputus";
+            statusBadge.style.backgroundColor = "#95a5a6";
+            statusUpdate.innerText = "Gagal mengambil data.";
+        })
+        .finally(() => {
+            // Hentikan animasi putar pada ikon refresh setelah selesai
+            setTimeout(() => {
+                iconRefresh.classList.remove("spin");
+                isFetching = false;
+            }, 500); // Beri jeda sedikit agar putaran animasi terasa mulus
+        });
+}
+
+// 1. Tambahkan event klik pada tombol refresh
+document.getElementById("btn-refresh").addEventListener("click", ambilDataTanah);
+
+// 2. Ambil data pertama kali saat web dibuka
+ambilDataTanah();
+
+// 3. Ambil data otomatis tiap 15 detik (meskipun tidak diklik)
+setInterval(ambilDataTanah, 15000);
